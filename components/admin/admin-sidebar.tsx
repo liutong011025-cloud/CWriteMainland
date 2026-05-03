@@ -1,119 +1,56 @@
-'use client'
+"use client"
 
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { useRouter } from 'next/navigation'
-import {
-  LayoutDashboard,
-  Users,
-  BookOpen,
-  MessageSquare,
-  StickyNote,
-  Shield,
-  Settings,
-  LogOut,
-  PenLine,
-} from 'lucide-react'
-import { cn } from '@/lib/utils'
-import { Button } from '@/ui/button'
+import Link from "next/link"
+import { usePathname } from "next/navigation"
+import { LayoutDashboard, Users, BookOpen, MessageCircle, StickyNote, ScrollText, Settings } from "lucide-react"
+import { cn } from "@/lib/utils"
 
-interface NavItem {
-  label: string
-  href: string
-  icon: React.ReactNode
-  adminOnly?: boolean
-}
-
-const navItems: NavItem[] = [
-  { label: 'Dashboard', href: '/admin', icon: <LayoutDashboard className="h-4 w-4" /> },
-  { label: 'Users', href: '/admin/users', icon: <Users className="h-4 w-4" /> },
-  { label: 'Works', href: '/admin/works', icon: <BookOpen className="h-4 w-4" /> },
-  { label: 'Reviews', href: '/admin/reviews', icon: <MessageSquare className="h-4 w-4" /> },
-  { label: 'Notes', href: '/admin/notes', icon: <StickyNote className="h-4 w-4" /> },
-  { label: 'Audit Log', href: '/admin/audit-logs', icon: <Shield className="h-4 w-4" />, adminOnly: true },
-  { label: 'Settings', href: '/admin/settings', icon: <Settings className="h-4 w-4" />, adminOnly: true },
-]
-
-interface AdminSidebarProps {
-  role: 'admin' | 'teacher'
+type AdminSidebarProps = {
+  role: "admin" | "teacher"
   name: string
   username: string
 }
 
-export function AdminSidebar({ role, name }: AdminSidebarProps) {
+const links = [
+  { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/admin/users", label: "Users", icon: Users, adminOnly: true },
+  { href: "/admin/works", label: "Works", icon: BookOpen },
+  { href: "/admin/reviews", label: "Reviews", icon: MessageCircle },
+  { href: "/admin/notes", label: "Notes", icon: StickyNote },
+  { href: "/admin/audit-logs", label: "Audit logs", icon: ScrollText, adminOnly: true },
+  { href: "/admin/settings", label: "Settings", icon: Settings, adminOnly: true },
+]
+
+export function AdminSidebar({ role, name, username }: AdminSidebarProps) {
   const pathname = usePathname()
-  const router = useRouter()
-
-  const visibleItems = navItems.filter(
-    (item) => !item.adminOnly || role === 'admin'
-  )
-
-  async function handleLogout() {
-    await fetch('/api/admin/logout', { method: 'POST' })
-    router.push('/admin/login')
-    router.refresh()
-  }
 
   return (
-    <aside className="flex w-56 flex-col border-r bg-sidebar">
-      {/* Logo */}
-      <div className="flex h-14 items-center gap-2 border-b px-4">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-          <PenLine className="h-4 w-4" />
-        </div>
-        <div>
-          <p className="text-sm font-semibold leading-none">CWrite</p>
-          <p className="text-xs text-muted-foreground">Admin</p>
-        </div>
+    <aside className="flex w-56 shrink-0 flex-col border-r bg-sidebar text-sidebar-foreground">
+      <div className="border-b p-4">
+        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Signed in</p>
+        <p className="truncate font-semibold">{name}</p>
+        <p className="truncate text-xs text-muted-foreground">@{username}</p>
+        <p className="mt-1 text-xs capitalize text-muted-foreground">{role}</p>
       </div>
-
-      {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto px-2 py-4">
-        <ul className="space-y-1">
-          {visibleItems.map((item) => {
-            const isActive =
-              item.href === '/admin'
-                ? pathname === '/admin'
-                : pathname.startsWith(item.href)
-
-            return (
-              <li key={item.href}>
-                <Link
-                  href={item.href}
-                  className={cn(
-                    'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-                    isActive
-                      ? 'bg-primary text-primary-foreground'
-                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                  )}
-                >
-                  {item.icon}
-                  {item.label}
-                </Link>
-              </li>
-            )
-          })}
-        </ul>
+      <nav className="flex flex-1 flex-col gap-0.5 p-2">
+        {links.map(({ href, label, icon: Icon, adminOnly }) => {
+          if (adminOnly && role !== "admin") return null
+          const active = pathname === href || (href !== "/admin" && pathname.startsWith(href))
+          return (
+            <Link
+              key={href}
+              href={href}
+              className={cn(
+                "flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                active ? "bg-sidebar-accent text-sidebar-accent-foreground" : "hover:bg-sidebar-accent/50"
+              )}
+            >
+              <Icon className="h-4 w-4 shrink-0" />
+              {label}
+            </Link>
+          )
+        })}
       </nav>
-
-      {/* User info + logout */}
-      <div className="border-t p-4">
-        <div className="mb-3">
-          <p className="text-sm font-medium leading-none">{name}</p>
-          <p className="mt-0.5 text-xs text-muted-foreground">
-            {role === 'admin' ? 'System Admin' : 'Teacher'}
-          </p>
-        </div>
-        <Button
-          variant="outline"
-          size="sm"
-          className="w-full gap-2"
-          onClick={handleLogout}
-        >
-          <LogOut className="h-3.5 w-3.5" />
-          Logout
-        </Button>
-      </div>
     </aside>
   )
 }

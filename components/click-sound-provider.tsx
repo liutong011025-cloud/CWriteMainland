@@ -3,38 +3,26 @@
 import { useEffect } from "react"
 
 /**
- * 全局點擊音效提供者：
- * - 掛在 root layout 中
- * - 監聽整個 document 的點擊事件
- * - 播放 /click.MP3（放在 public/click.MP3）
+ * 全局点击音效（通过 data-click-sound 等标记触发）；无音频资源时静默 no-op。
  */
 export default function ClickSoundProvider() {
   useEffect(() => {
-    if (typeof window === "undefined") return
-
-    const audio = new Audio("/click.MP3")
-    audio.preload = "auto"
-    audio.volume = 0.25
-
-    const handleClick = (event: MouseEvent) => {
-      // Allow specific buttons to override global click sound.
-      const target = event.target as HTMLElement | null
-      if (target?.closest?.('[data-click-sound="start-journey"]')) return
-      if (target?.closest?.('[data-click-sound="visit-farm"]')) return
+    const handler = (e: MouseEvent) => {
+      const el = (e.target as HTMLElement)?.closest?.("[data-click-sound]") as HTMLElement | null
+      if (!el) return
+      const kind = el.getAttribute("data-click-sound")
+      if (!kind) return
       try {
-        audio.currentTime = 0
+        const audio = new Audio(kind === "start-journey" ? "/bit.mp3" : "/bit.mp3")
+        audio.volume = 0.2
         void audio.play()
       } catch {
-        // 忽略播放錯誤（例如瀏覽器還未允許音訊）
+        // ignore
       }
     }
-
-    document.addEventListener("click", handleClick)
-    return () => {
-      document.removeEventListener("click", handleClick)
-    }
+    document.addEventListener("click", handler, true)
+    return () => document.removeEventListener("click", handler, true)
   }, [])
 
   return null
 }
-
